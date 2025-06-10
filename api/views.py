@@ -7,6 +7,11 @@ from django.contrib.auth import get_user_model
 from .models import User, Task, Submission, Notification
 from .serializers import UserSerializer, TaskSerializer, SubmissionSerializer, NotificationSerializer
 from django.http import HttpResponse
+from .permissions import IsAdminOrManager
+from django_filters.rest_framework import DjangoFilterBackend
+# from .tasks import send_notification
+
+
 
 def home_view(request):
     return HttpResponse("Welcome to the Intern Task API")
@@ -39,6 +44,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrManager]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'assigned_to']
 
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None):
@@ -48,6 +56,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.assigned_to = user
         task.save()
         Notification.objects.create(user=user, message=f"You have been assigned task: {task.title}")
+        # send_notification.delay(user_id, "Your message here")
         return Response({'status': 'assigned'})
 
     @action(detail=True, methods=['put'])
@@ -92,3 +101,5 @@ def task_stats(request):
     from django.db.models import Count
     stats = Task.objects.values('status').annotate(count=Count('id'))
     return Response(stats)
+
+
