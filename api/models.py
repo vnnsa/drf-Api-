@@ -6,33 +6,27 @@ from django.contrib.auth.models import AbstractUser
 #pw:2003@1209bin
 
 class User(AbstractUser):
-    pass
+    ROLE_CHOICES = (('admin', 'Admin'), ('manager', 'Manager'), ('intern', 'Intern'))
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
 class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    assigned_to = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='tasks')
+    status = models.CharField(max_length=20, default='Not Started')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
 
 class Submission(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    solution = models.TextField(
-        default="",
-        help_text="The solution submitted by the user"
-    )
+    submitted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='submissions/', null=True, blank=True)
+    link = models.URLField(null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    status = models.CharField(max_length=20, default='Pending')
     submitted_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default='pending')
-    feedback = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return f"Submission by {self.user.username} for {self.task.title}"
-
-    class Meta:
-        ordering = ['-submitted_at']
-        verbose_name = 'Submission'
-        verbose_name_plural = 'Submissions'
-
-    def save(self, *args, **kwargs):
-        # Custom save logic can be added here if needed
-        super().save(*args, **kwargs)
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -4,19 +4,28 @@ from .views import (
     UserViewSet,
     TaskViewSet,
     SubmissionViewSet,
+    NotificationViewSet,
     home_view,
+    register,
+    logout,
+    task_stats,
 )
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'tasks', TaskViewSet)
 router.register(r'submissions', SubmissionViewSet)
+router.register(r'notifications', NotificationViewSet, basename='notifications')
 
 urlpatterns = [
     path('home/', home_view, name='home'),
+    path('auth/register/', register, name='register'),
+    path('auth/login/', TokenObtainPairView.as_view(), name='login'),
+    path('auth/logout/', logout, name='logout'),
+    path('reports/task-stats/', task_stats, name='task-stats'),
     path('', include(router.urls)),
 ]
-
 
 
 # This code sets up the URL routing for the API, including a home view and routes for user, task, and submission endpoints.
